@@ -27,6 +27,32 @@ nohup python3 -u orchestrator.py \
 
 
 
+Low grade push
+
+```
+<!-- @format -->
+
+# limit threads to one (already done, but repeat just in case)
+
+git config pack.threads 1
+
+# cap the amount of heap Git will allocate while packing
+
+# (10 MB is very low – bump it if you have a little more RAM)
+
+git config pack.windowMemory 10m
+git config pack.packSizeLimit 20m
+
+# or, for a one‑off push, use the equivalent options on git-repack:
+
+git repack -a -d --window-memory=10m --max-pack-size=20m
+
+# then push as usual
+
+git push -u origin main
+
+```
+
 
 
 
