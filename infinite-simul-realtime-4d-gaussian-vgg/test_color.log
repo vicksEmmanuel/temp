@@ -1,0 +1,8 @@
+
+Processing dataset: coffee_martini
+Initiating 4D training from data/coffee_martini/coffee_martini/colmap_0 with duration 1
+Source Path: /workspace/sim-animate-environment/infinite-simul-realtime-4d-gaussian-vgg/data/coffee_martini/coffee_martini/colmap_0
+Model Path: /workspace/sim-animate-environment/infinite-simul-realtime-4d-gaussian-vgg/data/coffee_martini/coffee_martini/colmap_0/log
+Config Path: /workspace/sim-animate-environment/infinite-simul-realtime-4d-gaussian-vgg/third_party/infinite_simul_spacetime_gaussian/configs/general.json
+Restarting training in /workspace/sim-animate-environment/infinite-simul-realtime-4d-gaussian-vgg/data/coffee_martini/coffee_martini/colmap_0/log
+/workspace/sim-animate-environment/infinite-simul-realtime-4d-gaussian-vgg/data/coffee_martini/coffee_martini/colmap_0/log does not exist or needs restart, proceeding with training

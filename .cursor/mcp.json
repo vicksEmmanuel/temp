@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "agent-pipeline": {
+      "command": "node",
+      "args": [
+        "/root/.vscode-server/extensions/cemkurtulus.agent-pipeline-0.0.1/dist/mcp/server.js"
+      ],
+      "env": {
+        "AGENT_PIPELINE_WORKSPACE": "/workspace/sim-animate-environment"
+      }
+    }
+  }
+}
