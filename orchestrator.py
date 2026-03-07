@@ -411,6 +411,8 @@ def run_vgg_preprocessor(scene_name=None, start_frame=None, end_frame=None, scal
     os.system(f"rm -rf {colmap_pattern}")
 
     cmd = ["python3", "datasets/preprocessor.py"]
+    if scene_name:
+        cmd.extend(["--scene", scene_name])
     
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"

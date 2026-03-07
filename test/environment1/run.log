@@ -1,0 +1,68 @@
+DEBUG: Processing source: /workspace/sim-animate-environment/test/environment1/cam_00.mp4
+DEBUG: Enforcing SINGLE VIDEO MODE for cam_00.mp4
+Step 1: Running TTT3R Pose Generation...
+DEBUG (TTT3R): Processing source: /workspace/sim-animate-environment/test/environment1/cam_00.mp4
+Found 1 videos. Single video mode: True
+Detected original dimensions: 1280x720
+Extracting 30 frames per video from 1 cameras...
+2026-03-05 23:28:00.512473: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Resized dimensions for inference: 1280x720
+Total interleaved frames: 30
+Warning, cannot find cuda-compiled version of RoPE2D, using a slow pytorch version instead
+Loading TTT3R model from /workspace/sim-animate-environment/pretrain/ttt3r/cut3r_512_dpt_4_64.pth...
+... loading model from /workspace/sim-animate-environment/pretrain/ttt3r/cut3r_512_dpt_4_64.pth
+instantiating : ARCroco3DStereo(ARCroco3DStereoConfig(freeze='encoder',state_size=768,state_pe='2d',pos_embed='RoPE100',rgb_head=True,pose_head=True,patch_embed_cls='PatchEmbedDust3R',img_size=(512,512),head_type='dpt',output_mode='pts3d+pose',depth_mode=('exp',-inf,inf),conf_mode=('exp',1,inf),pose_mode=('exp',-inf,inf),enc_embed_dim=1024,enc_depth=24,enc_num_heads=16,dec_embed_dim=768,dec_depth=12,dec_num_heads=12,landscape_only=False))
+<All keys matched successfully>
+Preparing input sequence (30 total views)...
+/workspace/sim-animate-environment/TTT3R/src/dust3r/inference.py:295: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/workspace/sim-animate-environment/TTT3R/src/dust3r/heads/dpt_head.py:217: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/workspace/sim-animate-environment/TTT3R/src/dust3r/heads/dpt_head.py:226: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+>> Loading a list of 30 images
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0000.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0157.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0314.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0471.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0628.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0785.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f0942.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f1099.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f1256.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f1413.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f1570.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f1727.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f1884.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2041.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2198.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2355.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2512.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2669.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2826.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f2983.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f3140.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f3297.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f3454.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f3611.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f3768.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f3925.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f4082.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f4239.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f4396.jpg with resolution 1280x720 --> 512x288
+ - adding /workspace/sim-animate-environment/test/environment1/temp_ttt3r_frames/cam_00_f4553.jpg with resolution 1280x720 --> 512x288
+ (Found 30 images)
+Running recurrent inference...
+>> Inference with model on 30 image/raymaps
+Estimated focal (model space): 328.87 (W=512.0) -> Original: 822.18
+Estimating near/far bounds...
+Converting to LLFF format...
+Successfully saved /workspace/sim-animate-environment/test/environment1/poses_bounds.npy with shape (30, 17)
+Exporting 3D points...
+Loading Sharp model from /workspace/sim-animate-environment/pretrain/ml_sharp/sharp_2572gikvuh.pt...
+Step 2: Running SHARP inference and merging 30 views...
+  0%|          | 0/30 [00:00<?, ?it/s]  3%|▎         | 1/30 [00:05<02:32,  5.25s/it]  7%|▋         | 2/30 [00:10<02:32,  5.43s/it] 10%|█         | 3/30 [00:16<02:33,  5.68s/it] 13%|█▎        | 4/30 [00:21<02:21,  5.46s/it] 17%|█▋        | 5/30 [00:27<02:16,  5.46s/it] 20%|██        | 6/30 [00:32<02:08,  5.34s/it] 23%|██▎       | 7/30 [00:37<02:02,  5.34s/it] 27%|██▋       | 8/30 [00:43<01:59,  5.41s/it] 30%|███       | 9/30 [00:48<01:54,  5.44s/it] 33%|███▎      | 10/30 [00:53<01:43,  5.16s/it] 37%|███▋      | 11/30 [00:58<01:34,  4.99s/it] 40%|████      | 12/30 [01:02<01:27,  4.86s/it]Received 1 reflection matrices from SVD. Flipping them to rotations.
+ 43%|████▎     | 13/30 [01:07<01:20,  4.74s/it] 47%|████▋     | 14/30 [01:11<01:15,  4.70s/it] 50%|█████     | 15/30 [01:16<01:09,  4.64s/it] 53%|█████▎    | 16/30 [01:20<01:04,  4.63s/it] 57%|█████▋    | 17/30 [01:25<00:59,  4.60s/it] 60%|██████    | 18/30 [01:29<00:54,  4.56s/it] 63%|██████▎   | 19/30 [01:34<00:50,  4.55s/it] 67%|██████▋   | 20/30 [01:38<00:45,  4.52s/it] 70%|███████   | 21/30 [01:43<00:40,  4.55s/it] 73%|███████▎  | 22/30 [01:47<00:36,  4.53s/it] 77%|███████▋  | 23/30 [01:52<00:31,  4.57s/it] 80%|████████  | 24/30 [01:57<00:27,  4.60s/it] 83%|████████▎ | 25/30 [02:01<00:22,  4.56s/it] 87%|████████▋ | 26/30 [02:06<00:18,  4.53s/it] 90%|█████████ | 27/30 [02:11<00:14,  4.82s/it] 93%|█████████▎| 28/30 [02:17<00:10,  5.08s/it] 97%|█████████▋| 29/30 [02:22<00:05,  5.20s/it]100%|██████████| 30/30 [02:28<00:00,  5.27s/it]100%|██████████| 30/30 [02:28<00:00,  4.94s/it]
+Concatenating all views into one Gaussians3D object...
+EXIT_STATUS_WAS_0

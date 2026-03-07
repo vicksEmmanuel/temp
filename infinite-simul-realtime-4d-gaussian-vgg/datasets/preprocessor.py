@@ -1,5 +1,7 @@
 import os
 import sys
+import argparse
+from pathlib import Path
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # Get the project root (infinite-simul-realtime-4d-gaussian-vgg/)
@@ -10,18 +12,17 @@ sys.path.insert(0, project_root)
 submodule_path = os.path.join(project_root, "third_party", "infinite_simul_spacetime_gaussian")
 sys.path.insert(0, submodule_path)
 
-# Debug prints to confirm
-print(f"Current dir: {current_dir}")
-print(f"Project root: {project_root}")
-print(f"Full sys.path: {sys.path}")
-
 try:
     from dataset.preprocess import DatasetPreprocessor
 except ImportError:
     from third_party.infinite_simul_spacetime_gaussian.dataset.preprocess import DatasetPreprocessor
-import argparse
-from pathlib import Path
-from config.config import start_frame, end_frame, scale
+
+# config/config.py might not exist, but we expect it to
+try:
+    from config.config import start_frame, end_frame, scale
+except ImportError:
+    # Fallback defaults if config is missing
+    start_frame, end_frame, scale = 0, 50, 1
 
 def process_dataset_folder(folder_path):
     """Process a single dataset folder using the DatasetPreprocessor"""
@@ -38,12 +39,17 @@ def process_dataset_folder(folder_path):
     except Exception as e:
         print(f"Error processing {folder_path}: {e}")
 
-def process_all_datasets():
+def process_all_datasets(target_scene=None):
     data_dir = Path("data")
+    if not data_dir.exists():
+        print(f"Data directory {data_dir.absolute()} not found.")
+        return
     
     # Process each dataset folder
     for dataset_folder in data_dir.iterdir():
         if dataset_folder.is_dir():
+            if target_scene and dataset_folder.name != target_scene:
+                continue
             print(f"\nProcessing dataset: {dataset_folder.name}")
             
             # Process each subfolder in the dataset
@@ -52,4 +58,7 @@ def process_all_datasets():
                     process_dataset_folder(subfolder)
 
 if __name__ == "__main__":
-    process_all_datasets() 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--scene", type=str, default=None, help="Specific scene to process")
+    args = parser.parse_args()
+    process_all_datasets(target_scene=args.scene)

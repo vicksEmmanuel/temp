@@ -57,13 +57,52 @@ git push -u origin main
 
 
 
+### POSES Generator
+
+```bash
+# Processes all frames from each video automatically
+python3 generate_poses_ttt3r.py --folder /workspace/sim-animate-environment/test/environment1
+```
+
+
+python3 generate_poses_ttt3r.py --folder /workspace/sim-animate-environment/test/environment1 --use_colmap_poses
+
+
+```bash
+# Processes all frames from each video automatically (best for dynamic 4D scenes)
+python3 generate_poses_sharp.py --folder /workspace/sim-animate-environment/test/coffee_martini --output coffee_martini_sharp.npy
+
+# NOTE: If your scene appears upside-down in the trainer, try adding --no_axis_flip
+```
+
+### 3D Model Generator (Point Cloud)
+
+```bash
+# Generate 3D model from a single video (temporal trajectory)
+python3 generate_model_ttt3r.py --source /workspace/sim-animate-environment/test/environment1/cam_00.mp4 --output environment_model.ply
+
+# Generate 3D model from a folder of multi-camera videos
+python3 generate_model_ttt3r.py --source /workspace/sim-animate-environment/test/environment1 --output scene_model.ply
+```
+
+
+
+
+
+### Compare Poses
+
+```bash
+python3 compare_poses.py /workspace/sim-animate-environment/test/cut_roasted_beef/poses_bounds.npy /workspace/sim-animate-environment/test/cut_roasted_beef/cut_roasted_beef_ttt3r_refined.npy
+```
+
+
 ```bash
 
 nohup python3 -u orchestrator.py \
-    --video_folder /workspace/sim-animate-environment/outputs/coffee_martini \
-    --scene_name "coffee_martini" \
-    --num_videos 20 \
-    --end_frame 300 \
+    --video_folder /workspace/sim-animate-environment/test/09_Alexa_Meade_Exhibit \
+    --scene_name "09_Alexa_Meade_Exhibit" \
+    --num_videos 7 \
+    --end_frame 50 \
     --use_vggt > orchestrator_run.log 2>&1 &
 
 ```

@@ -195,6 +195,10 @@ class DatasetPreprocessor:
         
         for offset in tqdm(range(self.startframe, self.endframe), desc="Running COLMAP"):
             if offset == self.startframe:
+                # Clean images dir to avoid "File exists" during undistortion
+                images_dir = video_path / f"colmap_{offset}" / "images"
+                if images_dir.exists():
+                    shutil.rmtree(images_dir)
                 self.get_colmapsing_len_3d(video_path, offset)
             else:
                 # Optimized Path: Reuse SfM from startframe to save time
@@ -202,6 +206,10 @@ class DatasetPreprocessor:
                 colmap_dir = video_path / f"colmap_{offset}"
                 src_distorted = video_path / f"colmap_{self.startframe}" / "distorted" / "sparse"
                 input_images = colmap_dir / "input"
+                # Clean images dir to avoid "File exists" during undistortion
+                images_dir = colmap_dir / "images"
+                if images_dir.exists():
+                    shutil.rmtree(images_dir)
                 
                 if not src_distorted.exists():
                     print(f"Warning: Source distorted model {src_distorted} not found. Running full SfM for offset {offset}.")

@@ -16,7 +16,7 @@ def rot_z(theta):
     return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
 
 poses_list = [
-    "w-31", "s-31", "a-31", "d-31", 
+    "w-31", "s-31", "a-31", "d-31",
     "up-31", "down-31", "left-31", "right-31",
     "w-15, d-16", "w-15, a-16"
 ]

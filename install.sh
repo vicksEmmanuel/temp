@@ -7,7 +7,7 @@ echo "🚀 Starting Master Installation"
 echo "============================================================"
 
 # 1. System Dependencies
-echo "📦 [1/7] Installing system dependencies..."
+echo "📦 [1/8] Installing system dependencies..."
 apt-get update && apt-get install -y \
     colmap ffmpeg xvfb libgl1-mesa-glx python3-opencv sqlite3 \
     curl libx11-dev tree wget git-lfs libcudnn9-dev-cuda-12
@@ -15,7 +15,7 @@ apt-get update && apt-get install -y \
 git lfs install
 
 # 2. Environment Setup
-echo "🌐 [2/7] Setting up environment variables..."
+echo "🌐 [2/8] Setting up environment variables..."
 export CUDA_HOME=/usr/local/cuda-12.4
 export CUDNN_PATH=/usr/local/cuda
 export TORCH_PATH=$(python3 -c "import torch; import os; print(os.path.dirname(torch.__file__))")
@@ -26,21 +26,21 @@ export CPATH=$TORCH_PATH/include:$TORCH_PATH/include/torch/csrc/api/include:$CUD
 export CPLUS_INCLUDE_PATH=$CPATH:$CPLUS_INCLUDE_PATH
 
 export NVTE_CUDA_INCLUDE_PATH=$CUDA_HOME/include
-export MAX_JOBS=4
+export MAX_JOBS=1
 export TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0"
 
 # Clear caches to avoid ABI pollution
 rm -rf ~/.cache/torch_extensions
 
 # 3. Python Requirements
-echo "🐍 [3/7] Installing Python requirements..."
+echo "🐍 [3/8] Installing Python requirements..."
 pip install --upgrade pip
 pip install hf_transfer decord tyro nltk better_profanity boto3 accelerate tqdm
 pip install "imageio[ffmpeg,pyav]>=2.37.0"
 pip install scipy pandas retina-face megatron-core scikit-image matplotlib "pydantic[email]"
 pip install nvidia-ml-py --upgrade
 pip install ninja
-export MAX_JOBS=4 && pip install --no-cache-dir --no-build-isolation --no-binary flash-attn flash-attn==2.7.3 --verbose
+export MAX_JOBS=1 && pip install --no-cache-dir --no-build-isolation --no-binary flash-attn flash-attn==2.7.3 --verbose
 pip install --no-build-isolation "transformer-engine[pytorch]>=2.12.0"
 pip install natten
 pip install pycolmap
@@ -57,7 +57,7 @@ fi
 pip install easydict albumentations better-profanity boto3 click diffusers einops ftfy fvcore fastparquet huggingface-hub hydra-core "imageio[pyav,ffmpeg]" iopath loguru mediapy ml-dtypes modelscope multi-storage-client numpydantic omegaconf opencv-python pandas pyarrow peft pydantic qwen-vl-utils retinaface-py timm transformers wandb webdataset xformers angelslim==0.2.2 runwayml
 
 # 4. Cosmos Predict 2.5 Installation
-echo "🌌 [4/7] Installing Cosmos Predict 2.5..."
+echo "🌌 [4/8] Installing Cosmos Predict 2.5..."
 if [ -d "$ROOT_DIR/cosmos-predict2.5" ]; then
     cd $ROOT_DIR/cosmos-predict2.5
     git lfs pull
@@ -69,7 +69,7 @@ if [ -d "$ROOT_DIR/cosmos-predict2.5" ]; then
 fi
 
 # 5. CUDA Submodule Compilation (Gaussian Splatting)
-echo "⚙️ [5/7] Compiling custom CUDA modules..."
+echo "⚙️ [5/8] Compiling custom CUDA modules..."
 GAUSSIAN_SUBMODULES="$ROOT_DIR/infinite-simul-realtime-4d-gaussian-vgg/third_party/infinite_simul_spacetime_gaussian/thirdparty/gaussian_splatting/submodules"
 modules=("forward_full" "forward_lite" "gaussian_rasterization_ch3" "gaussian_rasterization_ch9" "simple-knn")
 
@@ -82,7 +82,7 @@ for module in "${modules[@]}"; do
 done
 
 # 6. MMCV from source
-echo "🔨 [6/7] Compiling MMCV from source..."
+echo "🔨 [6/8] Compiling MMCV from source..."
 MMCV_PATH="$ROOT_DIR/infinite-simul-realtime-4d-gaussian-vgg/third_party/infinite_simul_spacetime_gaussian/thirdparty/mmcv"
 if [ -d "$MMCV_PATH" ]; then
     cd "$MMCV_PATH"
@@ -97,10 +97,26 @@ fi
 
 # 7. HF CLI Tool
 if [ ! -f "/usr/local/bin/hf" ]; then
-    echo "⬇️ [7/7] Installing optimized HF CLI..."
+    echo "⬇️ [7/8] Installing optimized HF CLI..."
     wget -O /tmp/hf https://github.com/michaelfdf/hf/releases/latest/download/hf-linux-amd64 || curl -L -o /tmp/hf https://github.com/michaelfdf/hf/releases/latest/download/hf-linux-amd64
     mv /tmp/hf /usr/local/bin/hf
     chmod +x /usr/local/bin/hf
+fi
+
+# 8. Sharp Monocular View Synthesis
+echo "📸 [8/8] Installing Sharp Monocular View Synthesis..."
+if [ -d "$ROOT_DIR/ml-sharp" ]; then
+    cd "$ROOT_DIR/ml-sharp"
+    # Note: Using pip install -e . as per requirements.txt -e . entry
+    # This installs the project in editable mode along with its dependencies
+    pip install -e .
+    
+    # Download pre-trained model checkpoint
+    if [ ! -f "sharp_2572gikvuh.pt" ]; then
+        echo "   -> Downloading Sharp model checkpoint..."
+        wget https://ml-site.cdn-apple.com/models/sharp/sharp_2572gikvuh.pt
+    fi
+    cd "$ROOT_DIR"
 fi
 
 echo "============================================================"

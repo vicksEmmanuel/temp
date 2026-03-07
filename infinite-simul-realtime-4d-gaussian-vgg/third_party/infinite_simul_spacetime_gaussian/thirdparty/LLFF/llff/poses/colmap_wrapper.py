@@ -32,8 +32,13 @@ def run_colmap(basedir, match_type):
             '--ImageReader.single_camera', '1',
             '--SiftExtraction.use_gpu', '0',
     ]
-    feat_output = ( subprocess.check_output(feature_extractor_args, universal_newlines=True) )
-    logfile.write(feat_output)
+    try:
+        feat_output = ( subprocess.check_output(feature_extractor_args, universal_newlines=True) )
+        logfile.write(feat_output)
+    except subprocess.CalledProcessError as e:
+        logfile.write(e.output)
+        logfile.close()
+        raise e
     print('Features extracted')
 
     exhaustive_matcher_args = [
@@ -42,35 +47,37 @@ def run_colmap(basedir, match_type):
             '--SiftMatching.use_gpu', '0',
     ]
 
-    match_output = ( subprocess.check_output(exhaustive_matcher_args, universal_newlines=True) )
-    logfile.write(match_output)
+    try:
+        match_output = ( subprocess.check_output(exhaustive_matcher_args, universal_newlines=True) )
+        logfile.write(match_output)
+    except subprocess.CalledProcessError as e:
+        logfile.write(e.output)
+        logfile.close()
+        raise e
     print('Features matched')
     
     p = os.path.join(basedir, 'sparse')
     if not os.path.exists(p):
         os.makedirs(p)
 
-    # mapper_args = [
-    #     'colmap', 'mapper', 
-    #         '--database_path', os.path.join(basedir, 'database.db'), 
-    #         '--image_path', os.path.join(basedir, 'images'),
-    #         '--output_path', os.path.join(basedir, 'sparse'),
-    #         '--Mapper.num_threads', '16',
-    #         '--Mapper.init_min_tri_angle', '4',
-    # ]
     mapper_args = [
         'colmap', 'mapper',
             '--database_path', os.path.join(basedir, 'database.db'),
             '--image_path', os.path.join(basedir, 'images'),
-            '--output_path', os.path.join(basedir, 'sparse'), # --export_path changed to --output_path in colmap 3.6
+            '--output_path', os.path.join(basedir, 'sparse'),
             '--Mapper.num_threads', '16',
             '--Mapper.init_min_tri_angle', '4',
             '--Mapper.multiple_models', '0',
             '--Mapper.extract_colors', '0',
     ]
 
-    map_output = ( subprocess.check_output(mapper_args, universal_newlines=True) )
-    logfile.write(map_output)
+    try:
+        map_output = ( subprocess.check_output(mapper_args, universal_newlines=True) )
+        logfile.write(map_output)
+    except subprocess.CalledProcessError as e:
+        logfile.write(e.output)
+        logfile.close()
+        raise e
     logfile.close()
     print('Sparse map created')
     
