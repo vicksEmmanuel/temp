@@ -1,3 +1,0 @@
-[submodule "third_party/infinite_simul_spacetime_gaussian"]
-	path = third_party/infinite_simul_spacetime_gaussian
-	url = git@github.com:vicksEmmanuel/infinite-simul-spacetime-gaussian.git

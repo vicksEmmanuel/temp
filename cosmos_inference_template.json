@@ -1,8 +1,0 @@
-{
-  "name": "template",
-  "input_path": "",
-  "prompt": "",
-  "seed": 42,
-  "num_steps": 35,
-  "guidance": 7
-}

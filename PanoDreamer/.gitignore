@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Outputs and test directories
+output/
+out_*/
+test_*/
+renders/
+renders_*/
+*.png
+*.jpg
+*.jpeg
+*.npy
+*.ply
+*.mp4
+!examples/*.png
+!examples/*.jpg
+!assets/*.png
+!assets/*.jpg
+!assets/*.gif
+
+# Model checkpoints
+checkpoints/
+
+# External dependencies (cloned repos)
+inpainting_ckpts/
+
+# Backup files
+utils_backup/
+
+# Reference/temporary scripts
+luciddreamer*.py
+unused/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# HuggingFace cache
+.cache/
+
+# Logs
+*.log
