@@ -1,6 +1,14 @@
 #!/bin/bash
 # Master Installation Script for 4D Gaussian Environment
-set -e
+# set -e  # Disabled to allow continuation on non-critical failures
+
+# Fix for build systems that expect 'python' to exist (e.g. natten)
+if ! command -v python &> /dev/null; then
+    mkdir -p /tmp/python_shim
+    ln -sf $(which python3) /tmp/python_shim/python
+    export PATH="/tmp/python_shim:$PATH"
+    echo "🔗 Created python shim for build compatibility"
+fi
 
 echo "============================================================"
 echo "🚀 Starting Master Installation"
@@ -10,7 +18,7 @@ echo "============================================================"
 echo "📦 [1/8] Installing system dependencies..."
 apt-get update && apt-get install -y \
     colmap ffmpeg xvfb libgl1-mesa-glx python3-opencv sqlite3 \
-    curl libx11-dev tree wget git-lfs libcudnn9-dev-cuda-12
+    curl libx11-dev tree wget git-lfs libcudnn9-dev-cuda-12 || echo "⚠️ Failed to install some system dependencies, skipping..."
 
 git lfs install
 
@@ -40,12 +48,14 @@ pip install "imageio[ffmpeg,pyav]>=2.37.0"
 pip install scipy pandas retina-face megatron-core scikit-image matplotlib "pydantic[email]"
 pip install nvidia-ml-py --upgrade
 pip install ninja
-export MAX_JOBS=1 && pip install --no-cache-dir --no-build-isolation --no-binary flash-attn flash-attn==2.7.3 --verbose
-pip install --no-build-isolation "transformer-engine[pytorch]>=2.12.0"
-pip install natten
+export MAX_JOBS=1 && pip install --no-cache-dir --no-build-isolation --no-binary flash-attn flash-attn==2.7.3 --verbose || echo "⚠️ flash-attn installation failed"
+pip install --no-build-isolation "transformer-engine[pytorch]>=2.12.0" || echo "⚠️ transformer-engine installation failed"
+pip install natten --verbose
 pip install pycolmap
+pip install tqdm
 
-ROOT_DIR="/workspace/sim-animate-environment"
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+echo "📂 Project Root: $ROOT_DIR"
 
 if [ -f "$ROOT_DIR/infinite-simul-realtime-4d-gaussian-vgg/requirements.txt" ]; then
     pip install -r $ROOT_DIR/infinite-simul-realtime-4d-gaussian-vgg/requirements.txt
@@ -117,6 +127,41 @@ if [ -d "$ROOT_DIR/ml-sharp" ]; then
         wget https://ml-site.cdn-apple.com/models/sharp/sharp_2572gikvuh.pt
     fi
     cd "$ROOT_DIR"
+fi
+
+
+# 9. CUT3R Dependencies
+echo "🔬 [9/9] Installing CUT3R dependencies..."
+CUT3R_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd ../CUT3R && pwd 2>/dev/null || echo "")"
+
+if [ -d "$CUT3R_ROOT" ]; then
+    echo "   -> Found CUT3R at $CUT3R_ROOT"
+    
+    # Install CUT3R requirements (skip torch/torchvision — already installed)
+    pip install roma matplotlib opencv-python scipy einops trimesh tensorboard \
+        "pyglet<2" "huggingface-hub[torch]>=0.22" viser lpips hydra-core \
+        "pillow==10.3.0" h5py accelerate transformers scikit-learn gradio \
+        omegaconf || echo "⚠️ Some CUT3R deps failed"
+    
+    # gsplat for training logging
+    pip install gsplat || echo "⚠️ gsplat installation failed"
+    
+    # evo and open3d for evaluation
+    pip install evo open3d || echo "⚠️ evo/open3d installation failed"
+    
+    # Compile CroCo RoPE CUDA kernels
+    CUROPE_DIR="$CUT3R_ROOT/src/croco/models/curope"
+    if [ -d "$CUROPE_DIR" ]; then
+        echo "   -> Compiling CroCo RoPE CUDA kernels..."
+        cd "$CUROPE_DIR"
+        if [ -z "$CUDA_HOME" ]; then
+            export CUDA_HOME=$(dirname $(dirname $(which nvcc 2>/dev/null || echo "/usr/local/cuda/bin/nvcc")))
+        fi
+        python3 setup.py build_ext --inplace || echo "⚠️ CroCo RoPE compilation failed (needs nvcc)"
+        cd "$ROOT_DIR"
+    fi
+else
+    echo "⚠️ CUT3R directory not found at expected location (../CUT3R). Skipping CUT3R setup."
 fi
 
 echo "============================================================"

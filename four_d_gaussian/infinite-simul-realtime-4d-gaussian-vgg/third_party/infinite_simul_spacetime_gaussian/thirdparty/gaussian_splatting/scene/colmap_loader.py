@@ -116,30 +116,45 @@ def read_points3D_binary(path_to_model_file):
         void Reconstruction::ReadPoints3DBinary(const std::string& path)
         void Reconstruction::WritePoints3DBinary(const std::string& path)
     """
-
-
     with open(path_to_model_file, "rb") as fid:
         num_points = read_next_bytes(fid, 8, "Q")[0]
+        
+        # COLMAP points3D structure:
+        # POINT3D_ID (Q:8) | X, Y, Z (ddd:24) | R, G, B (BBB:3) | ERROR (d:8) | TRACK_LENGTH (Q:8)
+        # Total base size = 8 + 24 + 3 + 8 + 8 = 51 bytes
+        
+        # For CUT3R output where TRACK_LENGTH is always 0, we can read in bulk
+        # We'll check the total file size to see if it matches the (num_points * 51) expectation (+ 8 byte header)
+        import os
+        file_size = os.path.getsize(path_to_model_file)
+        
+        if file_size == 8 + num_points * 51:
+            # High-speed path for zero-track points (common in CUT3R)
+            data = np.fromfile(fid, dtype=[
+                ('id', '<Q'),
+                ('xyz', '<d', 3),
+                ('rgb', '<B', 3),
+                ('error', '<d'),
+                ('track_len', '<Q')
+            ])
+            return data['xyz'], data['rgb'], data['error'][:, np.newaxis]
+        else:
+            # Fallback for standard COLMAP files with variable track lengths
+            xyzs = np.empty((num_points, 3))
+            rgbs = np.empty((num_points, 3))
+            errors = np.empty((num_points, 1))
+            
+            for p_id in range(num_points):
+                binary_point_line_properties = read_next_bytes(
+                    fid, num_bytes=43, format_char_sequence="QdddBBBd")
+                xyzs[p_id] = binary_point_line_properties[1:4]
+                rgbs[p_id] = binary_point_line_properties[4:7]
+                errors[p_id] = binary_point_line_properties[7]
+                track_length = read_next_bytes(
+                    fid, num_bytes=8, format_char_sequence="Q")[0]
+                fid.read(8 * track_length) # skip track info
+            return xyzs, rgbs, errors
 
-        xyzs = np.empty((num_points, 3))
-        rgbs = np.empty((num_points, 3))
-        errors = np.empty((num_points, 1))
-
-        for p_id in range(num_points):
-            binary_point_line_properties = read_next_bytes(
-                fid, num_bytes=43, format_char_sequence="QdddBBBd")
-            xyz = np.array(binary_point_line_properties[1:4])
-            rgb = np.array(binary_point_line_properties[4:7])
-            error = np.array(binary_point_line_properties[7])
-            track_length = read_next_bytes(
-                fid, num_bytes=8, format_char_sequence="Q")[0]
-            track_elems = read_next_bytes(
-                fid, num_bytes=8*track_length,
-                format_char_sequence="ii"*track_length)
-            xyzs[p_id] = xyz
-            rgbs[p_id] = rgb
-            errors[p_id] = error
-    return xyzs, rgbs, errors
 
 def read_intrinsics_text(path):
     """

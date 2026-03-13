@@ -567,23 +567,37 @@ def fetchPly(path):
 
 def storePly(path, xyzt, rgb):
     # Define the dtype for the structured array
+    # u1 = uint8, f4 = float32
     dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'),('t','f4'),
             ('nx', 'f4'), ('ny', 'f4'), ('nz', 'f4'),
             ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')]
     
-    xyz = xyzt[:, :3]
-    normals = np.zeros_like(xyz)
-
-    elements = np.empty(xyzt.shape[0], dtype=dtype)
-    attributes = np.concatenate((xyzt, normals, rgb), axis=1)
-    elements[:] = list(map(tuple, attributes))
+    num_points = xyzt.shape[0]
+    elements = np.empty(num_points, dtype=dtype)
+    
+    # Fast bulk assignment instead of map(tuple, ...)
+    elements['x'] = xyzt[:, 0].astype('f4')
+    elements['y'] = xyzt[:, 1].astype('f4')
+    elements['z'] = xyzt[:, 2].astype('f4')
+    elements['t'] = xyzt[:, 3].astype('f4')
+    
+    # Normals (zeros)
+    elements['nx'] = 0
+    elements['ny'] = 0
+    elements['nz'] = 0
+    
+    # Colors
+    elements['red'] = rgb[:, 0].astype('u1')
+    elements['green'] = rgb[:, 1].astype('u1')
+    elements['blue'] = rgb[:, 2].astype('u1')
 
     # Create the PlyData object and write to file
     vertex_element = PlyElement.describe(elements, 'vertex')
     ply_data = PlyData([vertex_element])
     ply_data.write(path)
 
-def readColmapSceneInfoImmersive(path, images, eval, llffhold=8, multiview=False, duration=50, testonly=False ):
+
+def readColmapSceneInfoImmersive(path, images, eval, llffhold=8, multiview=False, duration=50, testonly=False, init_frame=-1, init_duration=1):
     try:
         cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.bin")
         cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.bin")
@@ -636,10 +650,7 @@ def readColmapSceneInfoImmersive(path, images, eval, llffhold=8, multiview=False
 
     nerf_normalization = getNerfppNorm(train_cam_infos)
 
-    ply_path = os.path.join(path, "sparse/0/points3D.ply")
-    bin_path = os.path.join(path, "sparse/0/points3D.bin")
-    txt_path = os.path.join(path, "sparse/0/points3D.txt")
-    totalply_path = os.path.join(path, "sparse/0/points3D_total" + str(duration) + ".ply")
+    totalply_path = os.path.join(path, "sparse/0/points3D_init" + str(init_duration) + ".ply")
     
     # if os.path.exists(ply_path):
     #     os.remove(ply_path)
@@ -654,20 +665,42 @@ def readColmapSceneInfoImmersive(path, images, eval, llffhold=8, multiview=False
         totalrgb = []
         totaltime = []
 
-        takeoffset = 0
-        for i in range(starttime, starttime + duration):
+        # Optimization: Check if all sparse models are actually the same file being copied
+        # In preprocess.py, we copy colmap_0 to all others.
+        import hashlib
+        def get_file_hash(filepath):
+            if not os.path.exists(filepath): return None
+            with open(filepath, "rb") as f:
+                return hashlib.md5(f.read(4096)).hexdigest() # just check header for speed
+        
+        # Load the base points once
+        base_bin_path = os.path.join(path, "sparse/0/points3D.bin")
+        base_xyz, base_rgb, _ = read_points3D_binary(base_bin_path)
+        base_hash = get_file_hash(base_bin_path)
+
+        if init_frame != -1:
+            starttime = init_frame
+        
+        for i in range(starttime, starttime + init_duration):
             thisbin_path = os.path.join(path, "sparse/0/points3D.bin").replace("colmap_"+ str(starttime), "colmap_" + str(i), 1)
-            xyz, rgb, _ = read_points3D_binary(thisbin_path)
+            
+            # If the file is the same as base (common in CUT3R preprocessing), reuse data
+            if i == starttime or get_file_hash(thisbin_path) == base_hash:
+                xyz, rgb = base_xyz, base_rgb
+            else:
+                xyz, rgb, _ = read_points3D_binary(thisbin_path)
             
             totalxyz.append(xyz)
             totalrgb.append(rgb)
-            totaltime.append(np.ones((xyz.shape[0], 1)) * (i-starttime) / duration)
+            totaltime.append(np.ones((xyz.shape[0], 1), dtype=np.float32) * (i-starttime) / duration)
+            
         xyz = np.concatenate(totalxyz, axis=0)
         rgb = np.concatenate(totalrgb, axis=0)
         totaltime = np.concatenate(totaltime, axis=0)
         assert xyz.shape[0] == rgb.shape[0]  
-        xyzt =np.concatenate( (xyz, totaltime), axis=1)     
+        xyzt = np.concatenate((xyz, totaltime), axis=1)     
         storePly(totalply_path, xyzt, rgb)
+
     try:
         pcd = fetchPly(totalply_path)
     except:
@@ -763,7 +796,7 @@ def readColmapSceneInfoMv(path, images, eval, llffhold=8, multiview=False, durat
 
 
 
-def readColmapSceneInfo(path, images, eval, llffhold=8, multiview=False, duration=50):
+def readColmapSceneInfo(path, images, eval, llffhold=8, multiview=False, duration=50, init_frame=-1, init_duration=1):
     try:
         cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.bin")
         cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.bin")
@@ -811,19 +844,16 @@ def readColmapSceneInfo(path, images, eval, llffhold=8, multiview=False, duratio
 
     nerf_normalization = getNerfppNorm(train_cam_infos)
 
-    ply_path = os.path.join(path, "sparse/0/points3D.ply")
-    bin_path = os.path.join(path, "sparse/0/points3D.bin")
-    txt_path = os.path.join(path, "sparse/0/points3D.txt")
-    totalply_path = os.path.join(path, "sparse/0/points3D_total" + str(duration) + ".ply")
-    
-
+    totalply_path = os.path.join(path, "sparse/0/points3D_init" + str(init_duration) + ".ply")
     
     if not os.path.exists(totalply_path):
         print("Converting point3d.bin to .ply, will happen only the first time you open the scene.")
         totalxyz = []
         totalrgb = []
         totaltime = []
-        for i in range(starttime, starttime + duration):
+        if init_frame != -1:
+            starttime = init_frame
+        for i in range(starttime, starttime + init_duration):
             thisbin_path = os.path.join(path, "sparse/0/points3D.bin").replace("colmap_"+ str(starttime), "colmap_" + str(i), 1)
             xyz, rgb, _ = read_points3D_binary(thisbin_path)
             totalxyz.append(xyz)
@@ -835,6 +865,7 @@ def readColmapSceneInfo(path, images, eval, llffhold=8, multiview=False, duratio
         assert xyz.shape[0] == rgb.shape[0]  
         xyzt =np.concatenate( (xyz, totaltime), axis=1)     
         storePly(totalply_path, xyzt, rgb)
+
     try:
         pcd = fetchPly(totalply_path)
     except:

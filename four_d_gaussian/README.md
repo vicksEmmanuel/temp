@@ -61,7 +61,7 @@ git push -u origin main
 
 ```bash
 # Processes all frames from each video automatically
-python3 generate_poses_ttt3r.py --folder /workspace/sim-animate-environment/test/environment1
+python3 generate_poses_bounds.py --folder /mnt/c/Users/kodeb/OneDrive/Desktop/vicks/Infinite-Simul/sim-animate-environment/test/environment1
 ```
 
 
@@ -99,8 +99,8 @@ python3 compare_poses.py /workspace/sim-animate-environment/test/cut_roasted_bee
 ```bash
 
 nohup python3 -u orchestrator.py \
-    --video_folder /workspace/sim-animate-environment/test/09_Alexa_Meade_Exhibit \
-    --scene_name "09_Alexa_Meade_Exhibit" \
+    --video_folder /mnt/c/Users/kodeb/OneDrive/Desktop/vicks/Infinite-Simul/sim-animate-environment/test/environment1 \
+    --scene_name "environment1" \
     --num_videos 7 \
     --end_frame 50 \
     --use_vggt > orchestrator_run.log 2>&1 &
@@ -135,3 +135,19 @@ pkill -f orchestrator.py; pkill -f preprocessor.py; pkill -f ttt3r_sfm.py && noh
     --v2v_model cosmos \
     > orchestrator_run.log 2>&1 &
 ```
+
+
+
+
+
+
+
+
+
+```bash
+ python3 generate_poses_bounds.py --source /mnt/c/Users/kodeb/OneDrive/Desktop/vicks/Infinite-Simul/sim-animate-environment/four_d_gaussian/infinite-simul-realtime-4d-gaussian-vgg/data/environment1/environment1 --use_cut3r
+```
+
+```bash
+ python3 orchestrator.py --video_folder /mnt/c/Users/kodeb/OneDrive/Desktop/vicks/Infinite-Simul/sim-animate-environment/four_d_gaussian/infinite-simul-realtime-4d-gaussian-vgg/data/environment1/environment1 --use_cut3r --scene_name "environment2" --num_videos 8 --end_frame 50
+ ```

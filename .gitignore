@@ -1,66 +1,125 @@
-__pycache__
-.pyc
-.log
-.ply
-
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*$py.class
+
+# C extensions
 *.so
-.Python
+
+# Distribution / packaging
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
 *.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environments
-.venv/
-venv/
-ENV/
-env/
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Outputs and test directories
-output/
-out_*/
-test_*/
-renders/
-renders_*/
-*.png
-*.jpg
+# Unit test / coverage reports
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Rope
+.ropeproject
+
+# Django stuff:
+*.log
+*.pot
+
+# Sphinx documentation
+docs/_build/
+
+# Ignore data and ckpts
+*.pth
+data
+src/checkpoints
+
+.*
+*.py[cod]
+# *.jpg
 *.jpeg
-*.npy
-*.ply
+# *.png
+*.gif
+*.bmp
 *.mp4
-!examples/*.png
-!examples/*.jpg
-!assets/*.png
-!assets/*.jpg
-!assets/*.gif
+*.mov
+*.mkv
+*.log
+*.zip
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.json
+# *.txt
+*.backup
+*.pkl
+*.html
+*.pdf
+*.whl
+cache
+__pycache__/
+storage/
+samples/
+!.gitignore
+!requirements.txt
+.DS_Store
+*DS_Store
+google/
+Wan2.1-T2V-14B/
+Wan2.1-T2V-1.3B/
+Wan2.1-I2V-14B-480P/
+Wan2.1-I2V-14B-720P/
+poetry.lock
 
-# Model checkpoints
 checkpoints/
 
-# External dependencies (cloned repos)
-inpainting_ckpts/
+poses/__pycache__/colmap_read_model.cpython-37.pyc
+poses/__pycache__/__init__.cpython-37.pyc
+poses/__pycache__/*.pyc
+__pycache__/*
+__pycache__/*
+poses/__pycache__/*.pyc
 
-# Backup files
-utils_backup/
 
-# Reference/temporary scripts
-luciddreamer*.py
-unused/
 
-# IDE
+
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
+tmp/*
 
-# HuggingFace cache
-.cache/
+script/__pycache__/*
 
-# Logs
-*.log
+data/*
+
+output/*
+tmp/*
+
+third_party/infinite_simul_spacetime_gaussian/output/*
+third_party/infinite_simul_spacetime_gaussian/tmp/*
+third_party/infinite_simul_spacetime_gaussian/script/__pycache__/*
+third_party/infinite_simul_spacetime_gaussian/poses/__pycache__/*
+third_party/infinite_simul_spacetime_gaussian/poses/__pycache__/colmap_read_model.cpython-37.pyc
+cook_spinach
+test

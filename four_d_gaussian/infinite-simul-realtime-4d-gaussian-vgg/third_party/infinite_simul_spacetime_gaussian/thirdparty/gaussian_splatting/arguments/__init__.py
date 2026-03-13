@@ -73,9 +73,15 @@ class ModelParams(ParamGroup):
         self.model = "gmodel" # 
         self.loader = "colmap" #
         
+        # CUT3R integration (optional alternative to COLMAP)
+        self.use_cut3r = False  # Use CUT3R instead of COLMAP for triangulation
+        self.cut3r_model_path = ""  # Path to CUT3R checkpoint (.pth)
+        self.init_frame = -1 # -1 means use starttime from path
+        self.init_duration = 1 # default only load points from the first colmap
 
 
         super().__init__(parser, "Loading Parameters", sentinel)
+
 
     def extract(self, args):
         g = super().extract(args)

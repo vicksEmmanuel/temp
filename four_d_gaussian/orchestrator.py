@@ -24,9 +24,9 @@ except ImportError:
 # ── RunwayML API Key ──
 RUNWAYML_API_KEY = "key_8bf56626283170655f68c12c2b4118f4e9209c949ae4f83fb9b54cb87e4780daa71665edc53b17ef37e0bf44d8dd4c735fb6292bf84347a5604da4f0e761bda1"
 
-# Paths Setup
-WORKSPACE_ROOT = Path("/workspace/sim-animate-environment")
-VGG_GAUSSIAN_DIR = WORKSPACE_ROOT / "infinite-simul-realtime-4d-gaussian-vgg"
+# Paths Setup — auto-detect from script location
+WORKSPACE_ROOT = Path(__file__).resolve().parent.parent  # four_d_gaussian -> sim-animate-environment
+VGG_GAUSSIAN_DIR = WORKSPACE_ROOT / "four_d_gaussian" / "infinite-simul-realtime-4d-gaussian-vgg"
 VGG_DATA_DIR = VGG_GAUSSIAN_DIR / "data"
 WAN_DIR = WORKSPACE_ROOT / "Wan2.1"
 COSMOS_DIR = WORKSPACE_ROOT / "cosmos-predict2.5"
@@ -459,6 +459,9 @@ if __name__ == "__main__":
     parser.add_argument("--scale", type=int, default=1)
     parser.add_argument("--fps", type=int, default=5)
     parser.add_argument("--use_vggt", action="store_true")
+    parser.add_argument("--use_cut3r", action="store_true", help="Use CUT3R for pose estimation instead of COLMAP")
+    parser.add_argument("--cut3r_model_path", type=str, default=str(WORKSPACE_ROOT / "checkpoints" / "cut3r" / "cut3r_512_dpt_4_64.pth"),
+                        help="Path to CUT3R model checkpoint")
     parser.add_argument("--spread_frames", action="store_true",
                         help="Evenly sample timesteps across the full video (better parallax) instead of using consecutive frames.")
     parser.add_argument("--vace_model", type=str, default=str(DEFAULT_VACE_MODEL))
@@ -531,7 +534,37 @@ if __name__ == "__main__":
     poses_bounds_file = scene_data_dir / "poses_bounds.npy"
     
     use_vggt = args.use_vggt
-    if use_vggt:
+    use_cut3r = args.use_cut3r
+    
+    if use_cut3r:
+        # Run CUT3R pose estimation
+        print(f"\n{'='*60}")
+        print(f"[CUT3R] Running CUT3R pose estimation")
+        print(f"{'='*60}\n")
+        
+        # Cleanup old colmap directories
+        for colmap_dir in VGG_DATA_DIR.glob(f"{args.scene_name}/{args.scene_name}/colmap_*"):
+            if colmap_dir.is_dir():
+                print(f"Cleaning up old colmap directory: {colmap_dir}")
+                shutil.rmtree(colmap_dir, ignore_errors=True)
+        
+        # Run generate_poses_bounds.py with --use_cut3r on the scene's video dir
+        gen_poses_script = Path(__file__).parent / "generate_poses_bounds.py"
+        cut3r_cmd = [
+            "python3", str(gen_poses_script),
+            "--source", str(scene_data_dir),
+            "--use_cut3r",
+            "--cut3r_model_path", str(args.cut3r_model_path),
+        ]
+        env_cut3r = os.environ.copy()
+        env_cut3r["PYTHONUNBUFFERED"] = "1"
+        try:
+            subprocess.run(cut3r_cmd, check=True, env=env_cut3r)
+            print(f"✅ CUT3R pose estimation complete")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ CUT3R pose estimation failed: {e}")
+            exit(1)
+    elif use_vggt:
         # Cleanup old corrupted colmap directories to ensure fresh SfM and high point density
         for colmap_dir in VGG_DATA_DIR.glob(f"{args.scene_name}/{args.scene_name}/colmap_*"):
             if colmap_dir.is_dir():

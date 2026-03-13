@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from thirdparty.gaussian_splatting.my_utils import posetow2c_matrcs, rotmat2qvec, qvec2rotmat
 from script.utils_pre import write_colmap
-from thirdparty.gaussian_splatting.helper3dg import getcolmapsinglen3d
+from thirdparty.gaussian_splatting.helper3dg import getcolmapsinglen3d, getcut3rsinglen3d
 from pycolmap import Reconstruction
 from tqdm import tqdm
 import cv2
@@ -24,10 +24,12 @@ import shutil
 
 class DatasetPreprocessor:
     
-    def __init__(self, startframe=0, endframe=300, scale=1):
+    def __init__(self, startframe=0, endframe=300, scale=1, use_cut3r=True, cut3r_model_path=""):
         self.startframe = startframe
         self.endframe = endframe
         self.scale = scale
+        self.use_cut3r = use_cut3r
+        self.cut3r_model_path = cut3r_model_path
 
 
     def extract_frames(self, video_path: Path, ext='png', save_subdir=""):
@@ -72,7 +74,11 @@ class DatasetPreprocessor:
 
 
     def get_colmapsing_len_3d(self, video_path, offset):
-        getcolmapsinglen3d(video_path, offset)
+        if self.use_cut3r:
+            getcut3rsinglen3d(video_path, offset, 
+                             model_path=self.cut3r_model_path if self.cut3r_model_path else None)
+        else:
+            getcolmapsinglen3d(video_path, offset)
 
 
     def convert_dnerf_to_colmap_db(self, video_path, offset):
@@ -121,6 +127,21 @@ class DatasetPreprocessor:
         video_files = sorted(video_folder.glob("cam*.mp4"))
         n_videos = len(video_files)
         
+        if self.use_cut3r:
+            # Use CUT3R for pose generation
+            print("Generating poses with CUT3R...")
+            import sys as _sys
+            _four_d_root = str(Path(__file__).resolve().parent.parent.parent.parent / "four_d_gaussian")
+            if _four_d_root not in _sys.path:
+                _sys.path.insert(0, _four_d_root)
+            from generate_poses_bounds import generate_poses_cut3r
+            generate_poses_cut3r(
+                str(video_folder),
+                model_path=self.cut3r_model_path if self.cut3r_model_path else None,
+            )
+            return
+        
+        # Default: Use COLMAP/LLFF for pose generation
         # Step 1: Extract 10 frames per video directly into images/
         print("Extracting frames...")
         images_dir = video_folder / "images"
@@ -193,44 +214,97 @@ class DatasetPreprocessor:
             self.convert_dnerf_to_colmap_db(video_path, offset)
 
         
-        for offset in tqdm(range(self.startframe, self.endframe), desc="Running COLMAP"):
-            if offset == self.startframe:
-                # Clean images dir to avoid "File exists" during undistortion
-                images_dir = video_path / f"colmap_{offset}" / "images"
-                if images_dir.exists():
-                    shutil.rmtree(images_dir)
-                self.get_colmapsing_len_3d(video_path, offset)
-            else:
-                # Optimized Path: Reuse SfM from startframe to save time
-                # We only run the undistorter for the current offset's images
+        # Check if CUT3R already generated the sparse model (skip COLMAP if so)
+        cut3r_sparse = video_path / f"colmap_{self.startframe}" / "sparse" / "0" / "points3D.bin"
+        
+        if self.use_cut3r:
+            # CUT3R mode: run triangulation for offset 0, then reuse sparse model for all subsequent offsets
+            if not (cut3r_sparse.exists() and cut3r_sparse.stat().st_size > 100):
+                print(f"[CUT3R] Running triangulation for offset {self.startframe}")
+                self.get_colmapsing_len_3d(video_path, self.startframe)
+            
+            # Ensure colmap_0 has images dir
+            colmap0_input = video_path / f"colmap_{self.startframe}" / "input"
+            colmap0_images = video_path / f"colmap_{self.startframe}" / "images"
+            if colmap0_input.exists() and not colmap0_images.exists():
+                colmap0_images.mkdir(parents=True, exist_ok=True)
+                for f in colmap0_input.iterdir():
+                    os.symlink(os.path.abspath(f), colmap0_images / f.name)
+            
+            # Reuse CUT3R's sparse model for all subsequent offsets
+            src_sparse = video_path / f"colmap_{self.startframe}" / "sparse" / "0"
+            for offset in tqdm(range(self.startframe + 1, self.endframe), desc="Reusing CUT3R sparse model"):
+                dst_sparse = video_path / f"colmap_{offset}" / "sparse" / "0"
+                dst_sparse.mkdir(parents=True, exist_ok=True)
+                for f in src_sparse.iterdir():
+                    shutil.copy2(str(f), str(dst_sparse / f.name))
+                # Also link images from input to images dir for training
                 colmap_dir = video_path / f"colmap_{offset}"
-                src_distorted = video_path / f"colmap_{self.startframe}" / "distorted" / "sparse"
-                input_images = colmap_dir / "input"
-                # Clean images dir to avoid "File exists" during undistortion
+                input_dir = colmap_dir / "input"
                 images_dir = colmap_dir / "images"
-                if images_dir.exists():
-                    shutil.rmtree(images_dir)
-                
-                if not src_distorted.exists():
-                    print(f"Warning: Source distorted model {src_distorted} not found. Running full SfM for offset {offset}.")
+                if input_dir.exists() and not images_dir.exists():
+                    images_dir.mkdir(parents=True, exist_ok=True)
+                    for f in input_dir.iterdir():
+                        os.symlink(os.path.abspath(f), images_dir / f.name)
+            
+            print(f"✅ CUT3R preprocessing complete for {self.endframe - self.startframe} offsets")
+        elif cut3r_sparse.exists() and cut3r_sparse.stat().st_size > 100:
+            print(f"✅ Found existing sparse model from CUT3R at {cut3r_sparse.parent}, skipping COLMAP")
+            # Reuse CUT3R's sparse model for all subsequent offsets
+            src_sparse = video_path / f"colmap_{self.startframe}" / "sparse" / "0"
+            for offset in tqdm(range(self.startframe + 1, self.endframe), desc="Reusing CUT3R sparse model"):
+                dst_sparse = video_path / f"colmap_{offset}" / "sparse" / "0"
+                dst_sparse.mkdir(parents=True, exist_ok=True)
+                for f in src_sparse.iterdir():
+                    shutil.copy2(str(f), str(dst_sparse / f.name))
+                colmap_dir = video_path / f"colmap_{offset}"
+                input_dir = colmap_dir / "input"
+                images_dir = colmap_dir / "images"
+                if input_dir.exists() and not images_dir.exists():
+                    shutil.copytree(str(input_dir), str(images_dir))
+            colmap0_input = video_path / f"colmap_{self.startframe}" / "input"
+            colmap0_images = video_path / f"colmap_{self.startframe}" / "images"
+            if colmap0_input.exists() and not colmap0_images.exists():
+                shutil.copytree(str(colmap0_input), str(colmap0_images))
+        else:
+            for offset in tqdm(range(self.startframe, self.endframe), desc="Running COLMAP"):
+                if offset == self.startframe:
+                    # Clean images dir to avoid "File exists" during undistortion
+                    images_dir = video_path / f"colmap_{offset}" / "images"
+                    if images_dir.exists():
+                        shutil.rmtree(images_dir)
                     self.get_colmapsing_len_3d(video_path, offset)
-                    continue
-
-                print(f"Reusing SfM from {src_distorted} for offset {offset}")
-                undist_cmd = f"colmap image_undistorter --image_path {input_images} --input_path {src_distorted} --output_path {colmap_dir} --output_type COLMAP"
-                exit_code = os.system(undist_cmd)
-                
-                if exit_code == 0:
-                    # Cleanup input like the original function
-                    shutil.rmtree(input_images, ignore_errors=True)
-                    # Move sparse files to sparse/0
-                    sparse_root = colmap_dir / "sparse"
-                    os.makedirs(sparse_root / "0", exist_ok=True)
-                    for f in os.listdir(sparse_root):
-                        if f != '0':
-                            shutil.move(sparse_root / f, sparse_root / "0" / f)
                 else:
-                    print(f"Error: Undistortion failed for offset {offset}")
+                    # Optimized Path: Reuse SfM from startframe to save time
+                    # We only run the undistorter for the current offset's images
+                    colmap_dir = video_path / f"colmap_{offset}"
+                    src_distorted = video_path / f"colmap_{self.startframe}" / "distorted" / "sparse"
+                    input_images = colmap_dir / "input"
+                    # Clean images dir to avoid "File exists" during undistortion
+                    images_dir = colmap_dir / "images"
+                    if images_dir.exists():
+                        shutil.rmtree(images_dir)
+                    
+                    if not src_distorted.exists():
+                        print(f"Warning: Source distorted model {src_distorted} not found. Running full SfM for offset {offset}.")
+                        self.get_colmapsing_len_3d(video_path, offset)
+                        continue
+
+                    print(f"Reusing SfM from {src_distorted} for offset {offset}")
+                    undist_cmd = f"colmap image_undistorter --image_path {input_images} --input_path {src_distorted} --output_path {colmap_dir} --output_type COLMAP"
+                    exit_code = os.system(undist_cmd)
+                    
+                    if exit_code == 0:
+                        # Cleanup input like the original function
+                        shutil.rmtree(input_images, ignore_errors=True)
+                        # Move sparse files to sparse/0
+                        sparse_root = colmap_dir / "sparse"
+                        os.makedirs(sparse_root / "0", exist_ok=True)
+                        for f in os.listdir(sparse_root):
+                            if f != '0':
+                                shutil.move(sparse_root / f, sparse_root / "0" / f)
+                    else:
+                        print(f"Error: Undistortion failed for offset {offset}")
 
     
     def __call__(self, *args, **kwds):

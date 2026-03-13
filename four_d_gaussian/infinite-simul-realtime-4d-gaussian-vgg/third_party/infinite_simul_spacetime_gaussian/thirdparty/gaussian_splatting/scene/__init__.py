@@ -49,15 +49,15 @@ class Scene:
 
 
         if loader == "colmap" or loader == "colmapvalid": # colmapvalid only for testing
-            scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval, multiview, duration=duration)
+            scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval, multiview, duration=duration, init_frame=args.init_frame, init_duration=args.init_duration)
         
         elif loader == "technicolor" or loader == "technicolorvalid" :
             scene_info = sceneLoadTypeCallbacks["Technicolor"](args.source_path, args.images, args.eval, multiview, duration=duration)
         
         elif loader == "immersive" or loader == "immersivevalid" or loader == "immersivess"  :
-            scene_info = sceneLoadTypeCallbacks["Immersive"](args.source_path, args.images, args.eval, multiview, duration=duration)
+            scene_info = sceneLoadTypeCallbacks["Immersive"](args.source_path, args.images, args.eval, multiview, duration=duration, init_frame=args.init_frame, init_duration=args.init_duration)
         elif loader == "immersivevalidss":
-            scene_info = sceneLoadTypeCallbacks["Immersive"](args.source_path, args.images, args.eval, multiview, duration=duration, testonly=True)
+            scene_info = sceneLoadTypeCallbacks["Immersive"](args.source_path, args.images, args.eval, multiview, duration=duration, testonly=True, init_frame=args.init_frame, init_duration=args.init_duration)
 
         elif loader == "colmapmv" : # colmapvalid only for testing
             scene_info = sceneLoadTypeCallbacks["Colmapmv"](args.source_path, args.images, args.eval, multiview, duration=duration)
@@ -67,8 +67,19 @@ class Scene:
         print(f"self.loaded_iter {self.loaded_iter}")
 
         if not self.loaded_iter:
-            with open(scene_info.ply_path, 'rb') as src_file, open(os.path.join(self.model_path, "input.ply") , 'wb') as dest_file:
-                dest_file.write(src_file.read())
+            import time
+            import shutil
+            for retry in range(5):
+                try:
+                    with open(scene_info.ply_path, 'rb') as src_file, open(os.path.join(self.model_path, "input.ply") , 'wb') as dest_file:
+                        dest_file.write(src_file.read())
+                    break
+                except OSError as e:
+                    if e.errno == 5 and retry < 4:
+                        print(f"I/O Error writing input.ply, retrying ({retry+1}/5)...")
+                        time.sleep(1)
+                    else:
+                        raise e
             json_cams = []
             camlist = []
             if scene_info.test_cameras:
@@ -77,8 +88,18 @@ class Scene:
                 camlist.extend(scene_info.train_cameras)
             for id, cam in enumerate(camlist):
                 json_cams.append(camera_to_JSON(id, cam))
-            with open(os.path.join(self.model_path, "cameras.json"), 'w') as file:
-                json.dump(json_cams, file, indent=2)
+            import time
+            for retry in range(5):
+                try:
+                    with open(os.path.join(self.model_path, "cameras.json"), 'w') as file:
+                        json.dump(json_cams, file, indent=2)
+                    break
+                except OSError as e:
+                    if e.errno == 5 and retry < 4:
+                        print(f"I/O Error writing cameras.json, retrying ({retry+1}/5)...")
+                        time.sleep(1)
+                    else:
+                        raise e
 
         if shuffle:
             random.shuffle(scene_info.train_cameras)  # Multi-res consistent random shuffling
